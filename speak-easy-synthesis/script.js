@@ -12,70 +12,52 @@ var rateValue = document.querySelector('.rate-value');
 var voices = [];
 
 function populateVoiceList() {
-  voices = synth.getVoices();
-  var selectedIndex = voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
-  voiceSelect.innerHTML = '';
-  for(i = 0; i < voices.length ; i++) {
-    var option = document.createElement('option');
-    option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
-    
-    if(voices[i].default) {
-      option.textContent += ' -- DEFAULT';
-    }
+    voices = synth.getVoices();
+    var selectedIndex =
+        voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
+    voiceSelect.innerHTML = '';
+    voices.forEach(function(voice) {
+        if (voice.lang !== 'pt-BR') return;
 
-    option.setAttribute('data-lang', voices[i].lang);
-    option.setAttribute('data-name', voices[i].name);
-    voiceSelect.appendChild(option);
-  }
-  voiceSelect.selectedIndex = selectedIndex;
+        var option = document.createElement('option');
+        option.textContent = voice.name + ' (' + voice.lang + ')';
+        if (voice.default) {
+            option.textContent += ' -- PADRÃO';
+        }
+        option.setAttribute('data-lang', voice.lang);
+        option.setAttribute('data-name', voice.name);
+        voiceSelect.appendChild(option);
+    });
+    voiceSelect.selectedIndex = selectedIndex;
 }
 
 populateVoiceList();
 if (speechSynthesis.onvoiceschanged !== undefined) {
-  speechSynthesis.onvoiceschanged = populateVoiceList;
+    speechSynthesis.onvoiceschanged = populateVoiceList;
 }
 
-function speak(){
-    if (synth.speaking) {
-        console.error('speechSynthesis.speaking');
-        return;
-    }
-    if (inputTxt.value !== '') {
-    var utterThis = new SpeechSynthesisUtterance(inputTxt.value);
-    utterThis.onend = function (event) {
-        console.log('SpeechSynthesisUtterance.onend');
-    }
-    utterThis.onerror = function (event) {
-        console.error('SpeechSynthesisUtterance.onerror');
-    }
-    var selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
-    for(i = 0; i < voices.length ; i++) {
-      if(voices[i].name === selectedOption) {
-        utterThis.voice = voices[i];
-      }
+function speak(text) {
+    if (!text || synth.speaking) return;
+    const utterThis = new SpeechSynthesisUtterance(text);
+    const voiceName = voiceSelect.selectedOptions[0].getAttribute('data-name');
+    const voice = voices.find(v => v.name === voiceName);
+    if (voice) {
+        utterThis.voice = voice;
     }
     utterThis.pitch = pitch.value;
     utterThis.rate = rate.value;
     synth.speak(utterThis);
-  }
-}
-
-inputForm.onsubmit = function(event) {
-  event.preventDefault();
-
-  speak();
-
-  inputTxt.blur();
 }
 
 pitch.onchange = function() {
-  pitchValue.textContent = pitch.value;
-}
+    pitchValue.textContent = pitch.value;
+};
 
 rate.onchange = function() {
-  rateValue.textContent = rate.value;
-}
+    rateValue.textContent = rate.value;
+};
 
-voiceSelect.onchange = function(){
-  speak();
-}
+document.addEventListener('keyup', function(e){
+  console.log(e.key);
+  speak(e.key);
+})
